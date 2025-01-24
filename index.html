@@ -1,40 +1,28 @@
-<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/webstorm-icon-logo.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WS playground</title>
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Graph Visualization</title>
+  <link rel="stylesheet" href="public/styles.css">
 </head>
 <body>
-<header class="logo">
-  <a href="https://www.jetbrains.com/webstorm/">
-    <img src="/webstorm-logo.svg" alt="WebStorm logo" width="344"
-         height="90">
-  </a>
-</header>
-<main id="app">
-  <h1 class="title">
-    Thank you for trying it out. <br /> Your first project is up and running
-    now.
-  </h1>
-  <section class="counter">
-    <div class="counter-info">
-      <p class="counter-text">Counter is</p>
-      <p class="counter-value" id="counter-value"></p>
-    </div>
-    <div class="counter-interaction">
-      <button id="increaseByOne" type="button">+1</button>
-      <button id="increaseByTwo" type="button">+2</button>
-      <button id="decreaseByOne" type="button">-1</button>
-      <button id="decreaseByTwo" type="button">-2</button>
-    </div>
-  </section>
-</main>
-<footer class="technologies">
-  <img src="/technologies.svg" alt="List of supported technologies">
-</footer>
-<script type="module" src="/src/main.js"></script>
+<div class="container">
+  <aside class="sidebar">
+    <h2>Controls</h2>
+    <label for="chart-type">Chart Type:</label>
+    <select id="chart-type">
+      <option value="surface">Surface</option>
+      <option value="bar">Bar</option>
+      <option value="heatmap">Heatmap</option>
+    </select>
+    <input type="file" id="file-input" accept=".csv, .json">
+    <button id="plot-btn">Plot Graph</button>
+    <button id="export-btn">Export Image</button>
+  </aside>
+  <main class="graph-area" id="graph-container">
+    <p>Graph will be displayed here</p>
+  </main>
+</div>
+<script type="module" src="src/main.js"></script>
 </body>
 </html>

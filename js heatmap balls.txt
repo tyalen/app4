@@ -1,0 +1,162 @@
+import Plotly from 'plotly.js-dist-min';
+
+document.addEventListener("DOMContentLoaded", () => {
+  const chartType = document.getElementById("chart-type");
+  const fileInput = document.getElementById("file-input");
+  const plotBtn = document.getElementById("plot-btn");
+  const exportBtn = document.getElementById("export-btn");
+  const graphContainer = document.getElementById("graph-container");
+
+  plotBtn.addEventListener("click", async () => {
+    const selectedChart = chartType.value;
+    const file = fileInput.files[0];
+    if (file) {
+      try {
+        const data = await readFile(file);
+
+        if (selectedChart === "surface") {
+          if (!Array.isArray(data) || !Array.isArray(data[0])) {
+            showAlert("A surface plot requires a 2D array of data.");
+            return;
+          }
+          plotSurfaceGraph(data);
+        } else if (selectedChart === "heatmap") {
+          if (!Array.isArray(data) || !Array.isArray(data[0])) {
+            showAlert("A 3D heatmap requires a 2D array of data.");
+            return;
+          }
+          plot3DHeatmap(data);
+        } else if (selectedChart === "bar" || selectedChart === "line") {
+          // For bar or line charts, use only the first two columns
+          const x = data.map(row => row[0]);
+          const y = data.map(row => row[1]);
+
+          if (selectedChart === "bar") {
+            plotBarGraph(x, y);
+          } else {
+            plotLineGraph(x, y);
+          }
+        } else {
+          showAlert("The selected chart type is not supported.");
+        }
+      } catch (error) {
+        showAlert("Error processing the file: " + error.message);
+      }
+    } else {
+      showAlert("Please select a file.");
+    }
+  });
+
+  exportBtn.addEventListener("click", () => {
+    Plotly.downloadImage(graphContainer, { format: 'png' })
+        .then(() => showAlert("The chart was successfully exported."))
+        .catch(error => showAlert("Export error: " + error.message));
+  });
+
+  async function readFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result;
+        if (file.type === 'application/json') {
+          try {
+            resolve(JSON.parse(text));
+          } catch (error) {
+            reject(new Error("Error parsing JSON."));
+          }
+        } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+          const rows = text.split('\n').filter(row => row.trim().length > 0);
+          const data = rows.map(row =>
+              row.split(',').slice(1).map(value => parseFloat(value.trim())) // Ignore the first column
+          ).filter(row => row.every(value => !isNaN(value))); // Filter out rows with NaN values
+          resolve(data);
+        } else {
+          reject(new Error("Unsupported file format."));
+        }
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  }
+
+
+  function plotSurfaceGraph(z) {
+    // Generate x and y axes based on the size of the z matrix
+    const x = Array.from({ length: z[0].length }, (_, i) => i + 1); // Column indices
+    const y = Array.from({ length: z.length }, (_, i) => i + 1); // Row indices
+
+    const trace = {
+      type: 'surface',
+      x: x,
+      y: y,
+      z: z,
+    };
+
+    Plotly.newPlot(graphContainer, [trace])
+        .catch(error => console.error('Error rendering surface plot:', error));
+  }
+
+  function plot3DHeatmap(z) {
+    // Generate x and y axes based on the size of the z matrix
+    const x = Array.from({ length: z[0].length }, (_, i) => i + 1); // Column indices
+    const y = Array.from({ length: z.length }, (_, i) => i + 1); // Row indices
+
+    // Create an array for the z values to be plotted in scatter3d
+    let scatterData = [];
+    for (let i = 0; i < z.length; i++) {
+      for (let j = 0; j < z[i].length; j++) {
+        scatterData.push({
+          x: x[j],
+          y: y[i],
+          z: z[i][j],
+          value: z[i][j]
+        });
+      }
+    }
+
+    const trace = {
+      type: 'scatter3d',
+      mode: 'markers',
+      x: scatterData.map(point => point.x),
+      y: scatterData.map(point => point.y),
+      z: scatterData.map(point => point.z),
+      marker: {
+        size: 5,
+        color: scatterData.map(point => point.value), // Color by value
+        colorscale: 'Viridis', // Change this to any other Plotly colorscale
+        showscale: true, // Show color scale
+        opacity: 0.8,
+      },
+    };
+
+    Plotly.newPlot(graphContainer, [trace])
+        .catch(error => console.error('Error rendering 3D heatmap:', error));
+  }
+
+  function plotLineGraph(x, y) {
+    const trace = {
+      type: 'scatter',
+      mode: 'lines',
+      x: x,
+      y: y,
+    };
+    Plotly.newPlot(graphContainer, [trace]);
+  }
+
+  function plotBarGraph(x, y) {
+    const trace = {
+      type: 'bar',
+      x: x,
+      y: y,
+    };
+    Plotly.newPlot(graphContainer, [trace]);
+  }
+
+  function showAlert(message) {
+    const alertBox = document.createElement("div");
+    alertBox.classList.add("custom-alert");
+    alertBox.textContent = message;
+    document.body.appendChild(alertBox);
+    setTimeout(() => alertBox.remove(), 3000);
+  }
+});
